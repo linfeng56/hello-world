@@ -72,7 +72,7 @@ jobs:
       - shell: bash
         # 手动更改apk名字
         run: |
-          mv ${{ github.workspace }}/hello-world/hello-world/hello-world.jar  hello-world-${{steps.prepare_release.outputs.tag_name}}.jar  
+          mv ${{ github.workspace }}/target/hello-world-0.1.jar  hello-world-${{steps.prepare_release.outputs.tag_name}}.jar  
       # 发布release，版本号是用户git push的tag里面的版本号，发布的只有代码压缩包（与手动默认发布一致）
       - name: Create Release
         id: create_release
