@@ -59,7 +59,7 @@ jobs:
     # 只在tag时执行，即在自己终端运行以下代码后才会触发
     # git tag -a v0.1.0 -m "release 0.1.0 version"
     # git push origin –-tags
-    if: contains(github.ref, 'tags/')
+    #if: contains(github.ref, 'tags/')
     steps:
       # 自己编写的shell命令
       # 学习如何设置单个任务的输出来被其他任务调用
@@ -69,6 +69,11 @@ jobs:
         run: |
           TAG_NAME=`echo $GITHUB_REF | cut -d / -f3`
           echo ::set-output name=tag_name::$TAG_NAME
+      - shell: bash
+        # 手动更改apk名字
+        run: |
+          ls ${{ github.workspace }}/
+          ls ${{ github.workspace }}/target/
       - shell: bash
         # 手动更改apk名字
         run: |
