@@ -32,7 +32,7 @@ jobs:
         settings-path: ${{ github.workspace }}
     
     - name: Unit tests
-    run: mvn -B test --file pom.xml
+      run: mvn -B test --file pom.xml
     
   build:
     name: Maven Build Package
