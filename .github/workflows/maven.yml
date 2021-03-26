@@ -1,0 +1,104 @@
+# This workflow will build a package using Maven and then publish it to GitHub packages when a release is created
+# For more information see: https://github.com/actions/setup-java#apache-maven-with-a-settings-path
+
+name: Maven Package
+
+on:
+  pull_request:
+    branches:
+      - 'master'
+  push:
+    branches:
+      - 'master'
+    # 在push tag时触发
+    tags:
+      - '*'
+  release:
+    types: [created]
+
+jobs:
+  test:
+    name: Run Unit Tests
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+        server-id: github
+        settings-path: ${{ github.workspace }}
+    
+    - name: Unit tests
+    run: mvn -B test --file pom.xml
+    
+  build:
+    name: Maven Build Package
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+        server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
+        settings-path: ${{ github.workspace }} # location for the settings.xml file
+
+    - name: Build with Maven
+      run: mvn -B package --file pom.xml
+
+  deploy:
+    name: Upload Release Asset
+    # 依赖上一个job
+    needs: build
+    runs-on: ubuntu-latest
+    # 只在tag时执行，即在自己终端运行以下代码后才会触发
+    # git tag -a v0.1.0 -m "release 0.1.0 version"
+    # git push origin –-tags
+    if: contains(github.ref, 'tags/')
+    steps:
+      # 自己编写的shell命令
+      # 学习如何设置单个任务的输出来被其他任务调用
+      - name: Prepare Release
+        # 设置id一般是为了其他step调用本步骤的输出
+        id: prepare_release
+        run: |
+          TAG_NAME=`echo $GITHUB_REF | cut -d / -f3`
+          echo ::set-output name=tag_name::$TAG_NAME
+      - shell: bash
+        # 手动更改apk名字
+        run: |
+          mv ${{ github.workspace }}/hello-world/hello-world/hello-world.jar  hello-world-${{steps.prepare_release.outputs.tag_name}}.jar  
+      # 发布release，版本号是用户git push的tag里面的版本号，发布的只有代码压缩包（与手动默认发布一致）
+      - name: Create Release
+        id: create_release
+        # 只有上一步获取到tag_name才继续
+        if: steps.prepare_release.outputs.tag_name
+        uses: actions/create-release@v1
+        env:
+          # GitHub 会自动创建 GITHUB_TOKEN 密码以在工作流程中使用
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 设置时区，默认是格林尼治时间
+          # TZ: Asia/Shanghai
+        with:
+          tag_name: ${{steps.prepare_release.outputs.tag_name}}
+          release_name: Release ${{steps.prepare_release.outputs.tag_name}}
+          draft: false
+          prerelease: false
+      # 这一步是对上一步发布的release文件的补充，调用github api上传一个apk文件
+      - name: Upload Release Asset
+        id: upload-release-asset 
+        # 只有create_release成功得到输出才继续
+        if: steps.create_release.outputs.upload_url
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          asset_path: ./hello-world-${{steps.prepare_release.outputs.tag_name}}.jar
+          asset_name: hello-world-${{steps.prepare_release.outputs.tag_name}}.jar
+          asset_content_type: application/gzip
