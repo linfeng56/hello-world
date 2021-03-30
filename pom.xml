@@ -15,6 +15,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
+    <cobertura-maven-plugin.version>2.7</cobertura-maven-plugin.version>
   </properties>
 
   <dependencies>
@@ -23,6 +24,11 @@
       <artifactId>junit</artifactId>
       <version>4.11</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>1.11</version>
     </dependency>
   </dependencies>
 
@@ -70,5 +76,37 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>cobertura-maven-plugin</artifactId>
+            <version>${cobertura-maven-plugin.version}</version>
+            <configuration>
+                <check>
+                    <branchRate>80</branchRate>
+                    <lineRate>80</lineRate>
+                    <haltOnFailure>true</haltOnFailure>
+                    <totalBranchRate>80</totalBranchRate>
+                    <totalLineRate>80</totalLineRate>
+                    <packageLineRate>80</packageLineRate>
+                    <packageBranchRate>80</packageBranchRate>
+                </check>
+                <aggregate>true</aggregate>
+                <encoding>${project.build.sourceEncoding}</encoding>
+                <quiet>true</quiet>
+                <format>xml</format>
+                <instrumentation>
+                    <ignoreTrivial>true</ignoreTrivial>
+                    <ignoreMethodAnnotations>
+                        <ignoreMethodAnnotation>lombok.Generated</ignoreMethodAnnotation>
+                    </ignoreMethodAnnotations>
+                    <excludes>
+                        <exclude>com/github/linfeng/**/*Test.class</exclude>
+                        <exclude>com/github/linfeng/App.class</exclude>
+                    </excludes>
+                </instrumentation>
+            </configuration>
+        </plugin>
+    </plugins>
   </build>
 </project>
